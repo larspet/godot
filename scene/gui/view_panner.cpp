@@ -41,48 +41,24 @@ bool ViewPanner::gui_input(const Ref<InputEvent> &p_event, Rect2 p_canvas_rect) 
 		// Moving the scroll wheel sends two events: one with pressed as true,
 		// and one with pressed as false. Make sure we only process one of them.
 		if (scroll_vec != Vector2() && mb->is_pressed()) {
-			if (control_scheme == SCROLL_PANS) {
-				if (mb->is_ctrl_pressed()) {
-					if (scroll_vec.y != 0) {
-						// Compute the zoom factor.
-						float zoom_factor = mb->get_factor() <= 0 ? 1.0 : mb->get_factor();
-						zoom_factor = ((scroll_zoom_factor - 1.0) * zoom_factor) + 1.0;
-						float zoom = scroll_vec.y > 0 ? 1.0 / scroll_zoom_factor : scroll_zoom_factor;
-						zoom_callback.call(zoom, mb->get_position(), p_event);
-						return true;
-					}
-				} else {
-					Vector2 panning = scroll_vec * mb->get_factor();
-					if (pan_axis == PAN_AXIS_HORIZONTAL) {
-						panning = Vector2(panning.x + panning.y, 0);
-					} else if (pan_axis == PAN_AXIS_VERTICAL) {
-						panning = Vector2(0, panning.x + panning.y);
-					} else if (mb->is_shift_pressed()) {
-						panning = Vector2(panning.y, panning.x);
-					}
-					pan_callback.call(-panning * scroll_speed, p_event);
-					return true;
+			// Ctrl reverses the control scheme, so use XOR to check if we should pan or zoom.
+			if ((control_scheme == SCROLL_PANS) ^ mb->is_ctrl_pressed()) {
+				Vector2 panning = scroll_vec * mb->get_factor();
+				if (pan_axis == PAN_AXIS_HORIZONTAL) {
+					panning = Vector2(panning.x + panning.y, 0);
+				} else if (pan_axis == PAN_AXIS_VERTICAL) {
+					panning = Vector2(0, panning.x + panning.y);
+				} else if (mb->is_shift_pressed()) {
+					panning = Vector2(panning.y, panning.x);
 				}
-			} else {
-				if (mb->is_ctrl_pressed()) {
-					Vector2 panning = scroll_vec * mb->get_factor();
-					if (pan_axis == PAN_AXIS_HORIZONTAL) {
-						panning = Vector2(panning.x + panning.y, 0);
-					} else if (pan_axis == PAN_AXIS_VERTICAL) {
-						panning = Vector2(0, panning.x + panning.y);
-					} else if (mb->is_shift_pressed()) {
-						panning = Vector2(panning.y, panning.x);
-					}
-					pan_callback.call(-panning * scroll_speed, p_event);
-					return true;
-				} else if (!mb->is_shift_pressed() && scroll_vec.y != 0) {
-					// Compute the zoom factor.
-					float zoom_factor = mb->get_factor() <= 0 ? 1.0 : mb->get_factor();
-					zoom_factor = ((scroll_zoom_factor - 1.0) * zoom_factor) + 1.0;
-					float zoom = scroll_vec.y > 0 ? 1.0 / scroll_zoom_factor : scroll_zoom_factor;
-					zoom_callback.call(zoom, mb->get_position(), p_event);
-					return true;
-				}
+				pan_callback.call(-panning * scroll_speed, p_event);
+				return true;
+			} else if (scroll_vec.y != 0) {
+				float zoom_factor = mb->get_factor() <= 0 ? 1.0 : mb->get_factor();
+				zoom_factor = ((scroll_zoom_factor - 1.0) * zoom_factor) + 1.0;
+				float zoom = scroll_vec.y > 0 ? 1.0 / scroll_zoom_factor : scroll_zoom_factor;
+				zoom_callback.call(zoom, mb->get_position(), p_event);
+				return true;
 			}
 		}
 
